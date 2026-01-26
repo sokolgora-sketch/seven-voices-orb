@@ -1,0 +1,21 @@
+/* Game Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  background: #ff00ff !important; /* loud purple test */
+  color: #000 !important;
+  font-size: 28px !important;
+}
+
+#game-container {
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}

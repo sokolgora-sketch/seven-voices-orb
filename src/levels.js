@@ -1,0 +1,2 @@
+// Level definitions
+const levels = [];

@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Seven Voices – Orb Game</title>
+
+<style>
+  body {
+    background: #0b1220;
+    color: #e5e7eb;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+  }
+
+  h1 { margin-bottom: 6px; }
+  .sub { opacity: .85; font-size: 14px; margin-bottom: 14px; }
+
+  .hud {
+    width: min(760px, 92vw);
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    border-radius: 12px;
+    border: 1px solid #1f2937;
+    background: rgba(17, 24, 39, .65);
+    backdrop-filter: blur(10px);
+    margin-bottom: 12px;
+  }
+  .hud .left, .hud .right { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .pill {
+    padding: 6px 10px;
+    border-radius: 999px;
+    border: 1px solid #1f2937;
+    background: rgba(2, 6, 23, .6);
+    font-size: 12px;
+    opacity: .95;
+  }
+  .pill strong { font-weight: 800; }
+
+  .board {
+    display: grid;
+    grid-template-columns: repeat(7, 64px);
+    grid-template-rows: repeat(7, 64px);
+    gap: 6px;
+    margin-top: 10px;
+  }
+
+  .cell {
+    width: 64px;
+    height: 64px;
+    border-radius: 10px;
+    background: #111827;
+    border: 1px solid #1f2937;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .cell.blocker {
+    background: #020617;
+    border: 2px solid #7c2d12;
+  }
+
+  .cell.goal::before {
+    content: "";
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    border: 2px dashed rgba(250, 204, 21, .7);
+    position: absolute;
+    opacity: .9;
+  }
+
+  .cell.legal::after {
+    content: "";
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 2px solid #22c55e;
+    position: absolute;
+  }
+
+  .orb {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, #7dd3fc, #0284c7);
+    box-shadow: 0 0 14px #38bdf8;
+    position: relative;
+    z-index: 2;
+  }
+
+  .info {
+    margin-top: 14px;
+    font-size: 13px;
+    opacity: 0.9;
+    width: min(760px, 92vw);
+  }
+
+  button {
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: none;
+    background: #2563eb;
+    color: white;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  button:hover { background: #1d4ed8; }
+  button.secondary { background: #334155; }
+  button.secondary:hover { background: #475569; }
+
+  /* modal */
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.55);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .modal {
+    width: min(520px, 92vw);
+    background: #0b1220;
+    border: 1px solid #1f2937;
+    border-radius: 16px;
+    padding: 16px;
+    box-shadow: 0 30px 80px rgba(0,0,0,.45);
+  }
+  .modal h2 { margin: 0 0 8px 0; }
+  .modal p { margin: 6px 0; opacity: .9; }
+  .modal .row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+</style>
+</head>
+
+<body>
+
+<h1>Seven Voices – Orb Game</h1>
+<div class="sub">Normal click = move. Editor=on + Shift+click = paint.</div>
+
+<div class="hud">
+  <div class="left">
+    <div class="pill">Mode: <strong><span id="hudMode">-</span></strong></div>
+    <div class="pill">Level: <strong><span id="hudLevel">-</span></strong></div>
+    <div class="pill">Moves: <strong><span id="hudMoves">0</span></strong></div>
+  </div>
+  <div class="right">
+    <button id="resetBtn" class="secondary" type="button">Reset</button>
+  </div>
+</div>
+
+<div class="hud" style="justify-content:center">
+  <div class="left">
+    <label class="pill">Mode
+      <select id="modeSel">
+        <option value="step">step</option>
+        <option value="glide">glide</option>
+      </select>
+    </label>
+
+    <label class="pill">Level
+      <select id="levelSel"></select>
+    </label>
+
+    <button id="nextBtn" type="button">Next Level</button>
+
+    <label class="pill">Editor
+      <select id="editorToggle">
+        <option value="off" selected>off</option>
+        <option value="on">on</option>
+      </select>
+    </label>
+
+    <label class="pill">Paint
+      <select id="paintSel">
+        <option value=".">.</option>
+        <option value="X">X</option>
+        <option value="O">O</option>
+        <option value="G">G</option>
+      </select>
+    </label>
+
+    <button id="exportBtn" type="button">Export</button>
+    <button id="importBtn" type="button">Import</button>
+  </div>
+</div>
+
+<textarea id="levelText" rows="8" style="display:none; width:min(760px,92vw); margin-top:10px;"
+  placeholder="Exported level will appear here (7 lines). For Import: paste 7 lines and press Import."></textarea>
+
+<div id="board" class="board"></div>
+
+<div class="info" id="info"></div>
+
+<div id="winOverlay" class="overlay">
+  <div class="modal">
+    <h2>WIN</h2>
+    <p>You reached the Goal.</p>
+    <p><strong>Moves:</strong> <span id="winMoves">0</span></p>
+    <div class="row">
+      <button id="nextLevelBtn" type="button">Next Level</button>
+      <button id="closeWinBtn" class="secondary" type="button">Close</button>
+    </div>
+  </div>
+</div>
+
+<script type="module" src="./src/main.js"></script>
+
+</body>
+</html>
