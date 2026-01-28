@@ -135,6 +135,8 @@ function render() {
       if (ch === "X") cell.classList.add("blocker");
       if (ch === "C") cell.classList.add("capture");
       if (ch === "G") cell.classList.add("goal");
+      if (ch === "B") cell.classList.add("bumper");
+      if (ch === "H") cell.classList.add("hole");
 
       const isLegal =
         Array.isArray(s.legalMoves) && s.legalMoves.some((m) => m.r === r && m.c === c);
