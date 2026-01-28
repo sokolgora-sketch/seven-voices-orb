@@ -8,3 +8,7 @@ coverage/
 .vscode/
 npm-debug.log*
 yarn-error.log*
+
+# accidental scratch files
+*.nextLevel
+engine.nextLevel
