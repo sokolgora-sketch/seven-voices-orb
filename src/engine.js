@@ -11,7 +11,7 @@
 // - each level.board is 7 strings of length 7.
 //
 // Editor APIs:
-// - setCell(r,c,ch) where ch in [".","X","O","G"]
+// - setCell(r,c,ch) where ch in [".","X","O","G","C"]
 // - normalizePieces(): enforce single O + single G
 // - setBoardFromStrings(rows7): load board (7 strings)
 
@@ -94,7 +94,8 @@ export class OrbEngine {
   }
 
   isBlocker(ch) {
-    return ch !== "." && ch !== "O" && ch !== "G";
+    // hard wall only
+    return ch === "X";
   }
 
   findOrb() {
@@ -115,10 +116,43 @@ export class OrbEngine {
     return null;
   }
 
+  countChar(ch) {
+    let n = 0;
+    for (let r = 0; r < this.SIZE; r++) {
+      for (let c = 0; c < this.SIZE; c++) {
+        if (this.board[r][c] === ch) n++;
+      }
+    }
+    return n;
+  }
+
+  isTraversable(ch) {
+    // tiles orb can slide over / land on (NOT including G gating)
+    return ch === "." || ch === "C";
+  }
+
+  captureAlongPath(from, to) {
+    const dr = Math.sign(to.r - from.r);
+    const dc = Math.sign(to.c - from.c);
+
+    // safety: must be straight or diagonal
+    if (!((dr === 0 && dc !== 0) || (dr !== 0 && dc === 0) || (dr !== 0 && dc !== 0))) return;
+
+    let r = from.r + dr;
+    let c = from.c + dc;
+
+    while (this.inBounds(r, c)) {
+      if (this.board[r][c] === "C") this.board[r][c] = ".";
+      if (r === to.r && c === to.c) break;
+      r += dr;
+      c += dc;
+    }
+  }
+
   // ---------- editor ----------
   setCell(r, c, ch) {
     if (!this.inBounds(r, c)) return false;
-    if (![".", "X", "O", "G"].includes(ch)) return false;
+    if (![".","X","O","G","C"].includes(ch)) return false;
 
     this.board[r][c] = ch;
     this.normalizePieces();
@@ -155,7 +189,7 @@ export class OrbEngine {
     const clean = rows7.map(s => String(s));
     if (!clean.every(s => s.length === 7)) return false;
 
-    const okChars = new Set([".", "X", "O", "G"]);
+    const okChars = new Set([".","X","O","G","C"]);
     if (!clean.every(row => row.split("").every(ch => okChars.has(ch)))) return false;
 
     this.board = clean.map(r => r.split(""));
@@ -193,12 +227,13 @@ export class OrbEngine {
     ];
 
     if (this.mode === "step") {
+      const remainingC = this.countChar("C");
       return deltas4
         .map(([dr, dc]) => ({ r: orb.r + dr, c: orb.c + dc }))
         .filter(p => this.inBounds(p.r, p.c))
         .filter(p => {
           const ch = this.board[p.r][p.c];
-          return ch === "." || ch === "G";
+          return ch === "." || ch === "C" || (ch === "G" && remainingC === 0);
         });
     }
 
@@ -217,17 +252,36 @@ export class OrbEngine {
       if (this.isBlocker(this.board[r][c])) continue;
 
       // march over empty cells
-      while (this.inBounds(r, c) && this.board[r][c] === ".") {
+      while (this.inBounds(r, c) && this.isTraversable(this.board[r][c])) {
         r += dr;
         c += dc;
       }
 
+      const remainingC = this.countChar("C");
+
       // case 1: we stopped because we hit "G"
       if (this.inBounds(r, c) && this.board[r][c] === "G") {
-        const key = `${r},${c}`;
-        if (!seen.has(key)) {
-          seen.add(key);
-          moves.push({ r, c });
+        // Only allow landing on G if captures are done.
+        if (remainingC === 0) {
+          const key = `${r},${c}`;
+          if (!seen.has(key)) {
+            seen.add(key);
+            moves.push({ r, c });
+          }
+        } else {
+          // If G is still locked, treat it like a wall: stop before it.
+          const stopR = r - dr;
+          const stopC = c - dc;
+          if (this.inBounds(stopR, stopC) && !(stopR === orb.r && stopC === orb.c)) {
+            const stopCh = this.board[stopR][stopC];
+            if (this.isTraversable(stopCh)) {
+              const key = `${stopR},${stopC}`;
+              if (!seen.has(key)) {
+                seen.add(key);
+                moves.push({ r: stopR, c: stopC });
+              }
+            }
+          }
         }
         continue;
       }
@@ -241,7 +295,7 @@ export class OrbEngine {
         if (stopR === orb.r && stopC === orb.c) continue;
 
         const stopCh = this.board[stopR][stopC];
-        if (stopCh === ".") {
+        if (this.isTraversable(stopCh)) {
           const key = `${stopR},${stopC}`;
           if (!seen.has(key)) {
             seen.add(key);
@@ -266,10 +320,14 @@ export class OrbEngine {
 
     const target = this.board[r][c];
 
+    // capture any C tiles you cross (including destination if it’s C)
+    this.captureAlongPath(orb, { r, c });
+
     this.board[orb.r][orb.c] = ".";
     this.board[r][c] = "O";
 
-    if (target === "G") this.win = true;
+    const remainingC = this.countChar("C");
+    if (target === "G" && remainingC === 0) this.win = true;
 
     return { ok: true, win: this.win };
   }

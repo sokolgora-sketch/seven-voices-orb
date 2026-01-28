@@ -81,6 +81,45 @@
     opacity: .9;
   }
 
+  /* Capture target (C) */
+  .cell.capture::before {
+    content: "";
+    width: 44px;
+    height: 44px;
+    border-radius: 999px;
+    border: 2px solid rgba(45, 212, 191, .85);
+    box-shadow: 0 0 14px rgba(45, 212, 191, .35);
+    position: absolute;
+    opacity: .95;
+  }
+  .cell.capture::after {
+    content: "C";
+    position: absolute;
+    font-weight: 900;
+    font-size: 16px;
+    color: rgba(45, 212, 191, .95);
+    text-shadow: 0 0 10px rgba(45, 212, 191, .35);
+  }
+
+  .cell.capture::before{
+    content:"";
+    position:absolute;
+    width:28px;
+    height:28px;
+    border-radius:8px;
+    border:2px solid rgba(34,197,94,.85);
+    box-shadow: 0 0 10px rgba(34,197,94,.35);
+  }
+  .cell.capture::after{
+    content:"";
+    position:absolute;
+    width:2px;
+    height:26px;
+    background: rgba(34,197,94,.9);
+    box-shadow: 0 0 10px rgba(34,197,94,.25);
+    transform: rotate(45deg);
+  }
+
   .cell.legal::after {
     content: "";
     width: 18px;
@@ -188,6 +227,7 @@
         <option value="X">X</option>
         <option value="O">O</option>
         <option value="G">G</option>
+      <option value="C">C</option>
       </select>
     </label>
 

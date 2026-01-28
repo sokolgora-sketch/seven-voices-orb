@@ -45,38 +45,28 @@ function getLevelsSafe() {
   return Array.isArray(lv) ? lv : [];
 }
 
+
 function getLevelIndexSafe() {
-  const idx = engine && typeof engine.levelIndex === "number" ? engine.levelIndex : 0;
-  return Number.isFinite(idx) ? idx : 0;
+
+  return (engine && Number.isFinite(engine.levelIndex)) ? engine.levelIndex : 0;
+
 }
 
-function setLevelIndexSafe(idx) {
-  try {
-    engine.levelIndex = idx;
-  } catch (_) {
-    // ignore if readonly
-  }
-}
+
 
 function applyLevel(idx) {
-  const levels = getLevelsSafe();
-  const n = levels.length;
 
-  if (!n) return false;
-  const clamped = ((idx % n) + n) % n;
-  const L = levels[clamped];
+  if (typeof engine.setLevel === "function") {
 
-  // Prefer an engine-native method if you have it
-  if (typeof engine.loadLevel === "function") {
-    engine.loadLevel(clamped);
-  } else if (typeof engine.setLevel === "function") {
-    engine.setLevel(clamped);
-  } else if (L && Array.isArray(L.board) && typeof engine.setBoardFromStrings === "function") {
-    engine.setBoardFromStrings(L.board);
-  } else if (typeof engine.reset === "function") {
-    // last resort: at least reset
-    engine.reset();
+    engine.setLevel(idx);
+
+    moveCount = 0;
+
+    return true;
+
   }
+
+  return false;
 
   setLevelIndexSafe(clamped);
   moveCount = 0;
@@ -145,7 +135,8 @@ function render() {
 
       const ch = s.board[r][c];
 
-      if (ch !== "." && ch !== "O" && ch !== "G") cell.classList.add("blocker");
+      if (ch === "X") cell.classList.add("blocker");
+      if (ch === "C") cell.classList.add("capture");
       if (ch === "G") cell.classList.add("goal");
 
       const isLegal =
@@ -162,12 +153,12 @@ function render() {
       // - If Editor=on AND ShiftKey => paint
       // - Else => move attempt (only if legal in *current* state)
       cell.addEventListener("click", (e) => {
-        const shiftPaint = !!(e && e.shiftKey && editorOn());
-
+        const editorEnabled = (!editorToggle) || (editorToggle.value === "on");
+        const shiftPaint = !!(e && e.shiftKey && editorEnabled);
         if (shiftPaint) {
           const paint = paintSel ? paintSel.value : ".";
           if (
-            (paint === "." || paint === "X" || paint === "O" || paint === "G") &&
+            (paint === "." || paint === "X" || paint === "O" || paint === "G" || paint === "C") &&
             typeof engine.setCell === "function"
           ) {
             engine.setCell(r, c, paint);
@@ -230,22 +221,39 @@ if (levelSel) {
   });
 }
 
+
 if (nextBtn) {
+
   nextBtn.addEventListener("click", () => {
-    const next = getLevelIndexSafe() + 1;
-    applyLevel(next);
+
+    if (typeof engine.nextLevel === "function") engine.nextLevel();
+
+    moveCount = 0;
+
     syncLevelOptions();
+
     render();
+
   });
+
 }
 
+
+
 if (resetBtn) {
+
   resetBtn.addEventListener("click", () => {
-    const idx = getLevelIndexSafe();
-    applyLevel(idx);
+
+    if (typeof engine.reset === "function") engine.reset();
+
+    moveCount = 0;
+
     render();
+
   });
+
 }
+
 
 if (exportBtn) {
   exportBtn.addEventListener("click", () => {
@@ -286,11 +294,7 @@ if (nextLevelBtn) {
   });
 }
 
-// Initial load: apply level 0 if levels exist, otherwise engine.reset()
-if (getLevelsSafe().length) {
-  applyLevel(getLevelIndexSafe());
-} else if (typeof engine.reset === "function") {
-  engine.reset();
-}
-
+// Initial load
+if (typeof engine.reset === "function") engine.reset();
+syncLevelOptions();
 render();
