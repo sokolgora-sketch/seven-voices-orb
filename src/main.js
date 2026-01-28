@@ -46,31 +46,28 @@ function getLevelsSafe() {
 }
 
 
+
 function getLevelIndexSafe() {
-
   return (engine && Number.isFinite(engine.levelIndex)) ? engine.levelIndex : 0;
-
 }
 
-
-
 function applyLevel(idx) {
+  const levels = getLevelsSafe();
+  const max = Math.max(0, (levels.length || 1) - 1);
+
+  let i = Number(idx);
+  if (!Number.isFinite(i)) i = 0;
+  if (i < 0) i = 0;
+  if (i > max) i = max;
 
   if (typeof engine.setLevel === "function") {
-
-    engine.setLevel(idx);
-
+    engine.setLevel(i);
     moveCount = 0;
-
+    if (levelSel) levelSel.value = String(i);
     return true;
-
   }
 
   return false;
-
-  setLevelIndexSafe(clamped);
-  moveCount = 0;
-  return true;
 }
 
 function syncLevelOptions() {
@@ -223,23 +220,14 @@ if (levelSel) {
 
 
 if (nextBtn) {
-
   nextBtn.addEventListener("click", () => {
-
+    hideWinUI();
     if (typeof engine.nextLevel === "function") engine.nextLevel();
-
     moveCount = 0;
-
     syncLevelOptions();
-
     render();
-
   });
-
 }
-
-
-
 if (resetBtn) {
 
   resetBtn.addEventListener("click", () => {
@@ -287,13 +275,12 @@ if (closeWinBtn) closeWinBtn.addEventListener("click", hideWinUI);
 if (nextLevelBtn) {
   nextLevelBtn.addEventListener("click", () => {
     hideWinUI();
-    const next = getLevelIndexSafe() + 1;
-    applyLevel(next);
+    if (typeof engine.nextLevel === "function") engine.nextLevel();
+    moveCount = 0;
     syncLevelOptions();
     render();
   });
 }
-
 // Initial load
 if (typeof engine.reset === "function") engine.reset();
 syncLevelOptions();

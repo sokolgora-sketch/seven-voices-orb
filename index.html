@@ -62,11 +62,15 @@
     align-items: center;
     justify-content: center;
     position: relative;
-    cursor: pointer;
-    user-select: none;
+    cursor: default;
+user-select: none;
   }
 
-  .cell.blocker {
+  
+  .cell.clickable {
+    cursor: pointer;
+  }
+.cell.blocker {
     background: #020617;
     border: 2px solid #7c2d12;
   }
@@ -193,6 +197,7 @@
     <div class="pill">Mode: <strong><span id="hudMode">-</span></strong></div>
     <div class="pill">Level: <strong><span id="hudLevel">-</span></strong></div>
     <div class="pill">Moves: <strong><span id="hudMoves">0</span></strong></div>
+    <div class="pill">Captures: <strong><span id="hudCaptures">0</span></strong></div>
   </div>
   <div class="right">
     <button id="resetBtn" class="secondary" type="button">Reset</button>
@@ -240,6 +245,13 @@
   placeholder="Exported level will appear here (7 lines). For Import: paste 7 lines and press Import."></textarea>
 
 <div id="board" class="board"></div>
+
+<div class="legend" id="legend">
+  <span><strong>O</strong> = Orb</span>
+  <span><strong>G</strong> = Goal (win only after all <strong>C</strong> cleared)</span>
+  <span><strong>C</strong> = Capture target (must clear)</span>
+  <span><strong>X</strong> = Blocker</span>
+</div>
 
 <div class="info" id="info"></div>
 

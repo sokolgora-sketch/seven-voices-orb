@@ -338,6 +338,7 @@ export class OrbEngine {
     const goal = this.findGoal(); // may be null after win because O overwrote it
     return {
       size: this.SIZE,
+      remainingC: this.countChar("C"),
       board: this.board.map(r => r.join("")),
       orb,
       goal,
