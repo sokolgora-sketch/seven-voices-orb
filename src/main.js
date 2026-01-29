@@ -20,6 +20,8 @@ const editorToggle = $("editorToggle");
 const paintSel = $("paintSel");
 const exportBtn = $("exportBtn");
 const importBtn = $("importBtn");
+const saveBtn = $("saveBtn");
+const loadBtn = $("loadBtn");
 const levelText = $("levelText");
 
 /**
@@ -58,6 +60,79 @@ const winBanner = $("winBanner");
 // ---- state ----
 let moveCount = 0;
 let lastEvent = "";
+
+
+const STORAGE_KEY = "seven-voices-orb.save.v1";
+
+function getBoardStringsSafe() {
+  if (typeof engine.exportBoardStrings === "function") return engine.exportBoardStrings();
+  const s = engine.getState ? engine.getState() : null;
+  if (!s || !Array.isArray(s.board)) return null;
+  return s.board.slice();
+}
+
+function saveSnapshot(reason) {
+  const s = engine.getState ? engine.getState() : null;
+  const boardStrings = getBoardStringsSafe();
+  if (!s || !boardStrings || boardStrings.length !== 7) return false;
+
+  const payload = {
+    v: 1,
+    ts: Date.now(),
+    levelIndex: Number.isFinite(s.levelIndex) ? s.levelIndex : 0,
+    mode: s.mode === "glide" ? "glide" : "step",
+    board: boardStrings,
+    editor: editorToggle ? editorToggle.value : "off",
+    paint: paintSel ? paintSel.value : ".",
+  };
+
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+    if (reason && typeof lastEvent === "string") lastEvent = String(reason);
+    return true;
+  } catch (e) {
+    console.warn("[saveSnapshot] failed:", e);
+    return false;
+  }
+}
+
+function loadSnapshot() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return { ok: false, reason: "no_saved_state" };
+    const data = JSON.parse(raw);
+
+    if (!data || data.v !== 1) return { ok: false, reason: "bad_version" };
+    if (!Array.isArray(data.board) || data.board.length !== 7) return { ok: false, reason: "bad_board" };
+
+    if (typeof engine.setLevel === "function" && Number.isFinite(data.levelIndex)) {
+      engine.setLevel(data.levelIndex);
+      if (levelSel) levelSel.value = String(data.levelIndex);
+    }
+
+    if (typeof engine.setMode === "function") {
+      engine.setMode(data.mode === "glide" ? "glide" : "step");
+      if (modeSel) modeSel.value = data.mode === "glide" ? "glide" : "step";
+    }
+
+    if (editorToggle) editorToggle.value = (data.editor === "on") ? "on" : "off";
+    if (paintSel) paintSel.value = typeof data.paint === "string" ? data.paint : ".";
+
+    if (typeof engine.setBoardFromStrings !== "function") return { ok: false, reason: "no_import_api" };
+    const ok = engine.setBoardFromStrings(data.board);
+    if (!ok) return { ok: false, reason: "engine_rejected_board" };
+
+    if (typeof engine.normalizePieces === "function") engine.normalizePieces();
+
+    if (typeof moveCount === "number") moveCount = 0;
+    if (typeof lastEvent === "string") lastEvent = "Loaded saved state";
+    return { ok: true };
+  } catch (e) {
+    console.warn("[loadSnapshot] failed:", e);
+    return { ok: false, reason: "exception" };
+  }
+}
+
 
 function fmtDir(d) {
   if (!d || !Number.isFinite(d.dr) || !Number.isFinite(d.dc)) return "-";
@@ -203,6 +278,7 @@ function render() {
             engine.setCell(r, c, paint);
             if (typeof engine.normalizePieces === "function") engine.normalizePieces();
             render();
+            saveSnapshot("Autosaved (paint)");
           }
           return;
         }
@@ -226,6 +302,7 @@ function render() {
             else lastEvent = "Moved";
           }
 
+          saveSnapshot("Autosaved (move)");
           render();
         }
       });
@@ -259,6 +336,7 @@ if (modeSel) {
   modeSel.addEventListener("change", () => {
     setModeFromSelect();
     render();
+    saveSnapshot("Autosaved (mode change)");
   });
 }
 
@@ -268,6 +346,7 @@ if (levelSel) {
     const idx = Number(levelSel.value || "0");
     applyLevel(Number.isFinite(idx) ? idx : 0);
     render();
+    saveSnapshot("Autosaved (level change)");
   });
 }
 
@@ -303,6 +382,22 @@ if (resetBtn) {
 
 }
 
+
+if (saveBtn) {
+  saveBtn.addEventListener("click", () => {
+    const ok = saveSnapshot("Saved");
+    if (!ok && typeof lastEvent === "string") lastEvent = "Save failed";
+    render();
+  });
+}
+
+if (loadBtn) {
+  loadBtn.addEventListener("click", () => {
+    const res = loadSnapshot();
+    if (!res.ok && typeof lastEvent === "string") lastEvent = "Load failed: " + res.reason;
+    render();
+  });
+}
 
 if (exportBtn) {
   exportBtn.addEventListener("click", () => {
