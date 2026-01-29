@@ -12,3 +12,6 @@ yarn-error.log*
 # accidental scratch files
 *.nextLevel
 engine.nextLevel
+
+# local helper scripts (optional)
+scripts/
