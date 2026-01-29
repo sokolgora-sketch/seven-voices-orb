@@ -22,6 +22,25 @@ const exportBtn = $("exportBtn");
 const importBtn = $("importBtn");
 const levelText = $("levelText");
 
+/**
+ * DEV_MODE
+ * - default (no query): player mode (hide editor tools)
+ * - ?dev=1 : show editor tools + allow Shift+Click painting when Editor=on
+ */
+const DEV_MODE = new URLSearchParams(window.location.search).has("dev");
+
+function setDevToolsVisible(show) {
+  // hide/show the *label wrappers* when possible, otherwise the element
+  const ids = ["editorToggle", "paintSel", "exportBtn", "importBtn", "levelText"];
+  for (const id of ids) {
+    const el = document.getElementById(id);
+    if (!el) continue;
+    const wrap = el.closest("label") || el;
+    wrap.style.display = show ? "" : "none";
+  }
+}
+
+
 // HUD pills (new HTML)
 const hudMode = $("hudMode");
 const hudLevel = $("hudLevel");
@@ -105,7 +124,7 @@ function hideWinUI() {
 }
 
 function editorOn() {
-  return !!(editorToggle && editorToggle.value === "on");
+  return !!(DEV_MODE && editorToggle && editorToggle.value === "on");
 }
 
 function ensureTextAreaVisible() {
@@ -132,6 +151,8 @@ function render() {
 
       const ch = s.board[r][c];
 
+      if (TILE_INFO[ch]) cell.title = TILE_INFO[ch];
+
       if (ch === "X") cell.classList.add("blocker");
       if (ch === "C") cell.classList.add("capture");
       if (ch === "G") cell.classList.add("goal");
@@ -156,10 +177,8 @@ function render() {
         const shiftPaint = !!(e && e.shiftKey && editorEnabled);
         if (shiftPaint) {
           const paint = paintSel ? paintSel.value : ".";
-          if (
-            ((paint === "." || paint === "X" || paint === "O" || paint === "G" || paint === "C") || paint === "B" || paint === "H") &&
-            typeof engine.setCell === "function"
-          ) {
+          const okPaint = new Set([".", "X", "O", "G", "C", "B", "H"]);
+          if (okPaint.has(paint) && typeof engine.setCell === "function") {
             engine.setCell(r, c, paint);
             if (typeof engine.normalizePieces === "function") engine.normalizePieces();
             render();
@@ -230,6 +249,14 @@ if (nextBtn) {
     render();
   });
 }
+if (editorToggle) {
+  editorToggle.addEventListener("change", () => {
+    // only meaningful in DEV_MODE (in player mode the toggle is hidden)
+    setDevToolsVisible(DEV_MODE);
+    render();
+  });
+}
+
 if (resetBtn) {
 
   resetBtn.addEventListener("click", () => {
@@ -287,3 +314,15 @@ if (nextLevelBtn) {
 if (typeof engine.reset === "function") engine.reset();
 syncLevelOptions();
 render();
+
+// ---- Tile descriptions (UI only) ----
+const TILE_INFO = {
+  "O": "Orb (you)",
+  ".": "Empty",
+  "X": "Blocker (cannot pass)",
+  "C": "Capture target (must clear)",
+  "G": "Goal (win after all captures)",
+  "B": "Bumper (forces reverse direction)",
+  "H": "Hole (returns to last safe tile)"
+};
+
