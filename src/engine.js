@@ -21,8 +21,12 @@ export class OrbEngine {
     this.mode = mode === "glide" ? "glide" : "step";
 
     this.levels = [
-      {
+      
+{
         name: "L1 — Warmup",
+        author: "",
+        difficulty: "",
+        hint: "",
         board: [
           ".......",
           "..X....",
@@ -380,7 +384,11 @@ export class OrbEngine {
       win: this.win,
       mode: this.mode,
       levelIndex: this.levelIndex,
-      levelName: (this.levels[this.levelIndex] || this.levels[0]).name,
+      
+levelName: (this.levels[this.levelIndex] || this.levels[0]).name,
+      levelAuthor: (this.levels[this.levelIndex] || this.levels[0]).author || "",
+      levelDifficulty: (this.levels[this.levelIndex] || this.levels[0]).difficulty || "",
+      levelHint: (this.levels[this.levelIndex] || this.levels[0]).hint || "",
       levelCount: this.levels.length,
       legalMoves: this.legalMoves(),
     };
