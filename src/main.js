@@ -57,6 +57,16 @@ const winBanner = $("winBanner");
 
 // ---- state ----
 let moveCount = 0;
+let lastEvent = "";
+
+function fmtDir(d) {
+  if (!d || !Number.isFinite(d.dr) || !Number.isFinite(d.dc)) return "-";
+  return "(" + d.dr + "," + d.dc + ")";
+}
+function fmtPos(p) {
+  if (!p || !Number.isFinite(p.r) || !Number.isFinite(p.c)) return "-";
+  return "(" + p.r + "," + p.c + ")";
+}
 
 // ---- helpers ----
 function getLevelsSafe() {
@@ -205,6 +215,17 @@ function render() {
         const res = engine.moveTo(r, c);
         if (res && res.ok) {
           moveCount += 1;
+
+          // explain what just happened (Hole / Bumper / Win / normal)
+          if (res.fell) {
+            lastEvent = "Fell into Hole (H) → returned to last safe tile";
+          } else {
+            const sAfter = engine.getState ? engine.getState() : null;
+            if (sAfter && sAfter.orbOnBumper) lastEvent = "Hit Bumper (B) → next move is forced reverse";
+            else if (sAfter && sAfter.win) lastEvent = "WIN";
+            else lastEvent = "Moved";
+          }
+
           render();
         }
       });
