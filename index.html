@@ -201,6 +201,10 @@ user-select: none;
   .helpList{margin:0;padding-left:18px;line-height:1.45;opacity:.9}
   .helpList li{margin:6px 0}
 
+
+  .controls{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;align-items:center}
+  .controls button{white-space:nowrap}
+  .controls .left{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;align-items:center}
 </style>
 </head>
 
@@ -221,7 +225,7 @@ user-select: none;
   </div>
 </div>
 
-<div class="hud" style="justify-content:center">
+<div class="hud controls" style="justify-content:center">
   <div class="left">
     <label class="pill">Mode
       <select id="modeSel">
