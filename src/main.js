@@ -132,6 +132,17 @@ function ensureTextAreaVisible() {
   levelText.style.display = "block";
 }
 
+// ---- Tile descriptions (UI only) ----
+const TILE_INFO = {
+  "O": "Orb (you)",
+  ".": "Empty",
+  "X": "Blocker (cannot pass)",
+  "C": "Capture target (must clear)",
+  "G": "Goal (win after all captures)",
+  "B": "Bumper (forces reverse direction)",
+  "H": "Hole (returns to last safe tile)"
+};
+
 // ---- render ----
 function render() {
   const s = engine.getState ? engine.getState() : null;
@@ -314,15 +325,3 @@ if (nextLevelBtn) {
 if (typeof engine.reset === "function") engine.reset();
 syncLevelOptions();
 render();
-
-// ---- Tile descriptions (UI only) ----
-const TILE_INFO = {
-  "O": "Orb (you)",
-  ".": "Empty",
-  "X": "Blocker (cannot pass)",
-  "C": "Capture target (must clear)",
-  "G": "Goal (win after all captures)",
-  "B": "Bumper (forces reverse direction)",
-  "H": "Hole (returns to last safe tile)"
-};
-
