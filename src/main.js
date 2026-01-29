@@ -157,7 +157,7 @@ function render() {
         if (shiftPaint) {
           const paint = paintSel ? paintSel.value : ".";
           if (
-            (paint === "." || paint === "X" || paint === "O" || paint === "G" || paint === "C") &&
+            ((paint === "." || paint === "X" || paint === "O" || paint === "G" || paint === "C") || paint === "B" || paint === "H") &&
             typeof engine.setCell === "function"
           ) {
             engine.setCell(r, c, paint);

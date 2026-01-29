@@ -61,6 +61,10 @@ export class OrbEngine {
 
     this.levelIndex = 0;
     this.reset();
+
+    this.lastSafe = null;      // {r,c}
+    this.forcedDir = null;     // {dr,dc} or null
+    this.orbOnBumper = false;  // last landing was B
   }
 
   // ---------- level / state ----------
@@ -69,6 +73,11 @@ export class OrbEngine {
     this.board = level.board.map(r => r.split(""));
     this.win = false;
     this.normalizePieces();
+
+    const o = this.findOrb();
+    this.lastSafe = o ? { r: o.r, c: o.c } : null;
+    this.forcedDir = null;
+    this.orbOnBumper = false;
   }
 
   setMode(mode) {
@@ -152,7 +161,7 @@ export class OrbEngine {
   // ---------- editor ----------
   setCell(r, c, ch) {
     if (!this.inBounds(r, c)) return false;
-    if (![".","X","O","G","C"].includes(ch)) return false;
+    if (![".","X","O","G","C","B","H"].includes(ch)) return false;
 
     this.board[r][c] = ch;
     this.normalizePieces();
@@ -189,7 +198,7 @@ export class OrbEngine {
     const clean = rows7.map(s => String(s));
     if (!clean.every(s => s.length === 7)) return false;
 
-    const okChars = new Set([".","X","O","G","C"]);
+    const okChars = new Set([".","X","O","G","C","B","H"]);
     if (!clean.every(row => row.split("").every(ch => okChars.has(ch)))) return false;
 
     this.board = clean.map(r => r.split(""));
@@ -207,6 +216,9 @@ export class OrbEngine {
     if (this.win) return [];
     const orb = this.findOrb();
     if (!orb) return [];
+
+    const walkable = (ch) => (ch === "." || ch === "C" || ch === "B" || ch === "H" || ch === "G");
+    const passable = (ch) => (ch === "." || ch === "C" || ch === "B" || ch === "H"); // not G, not X
 
     const deltas4 = [
       [1, 0],
@@ -227,81 +239,68 @@ export class OrbEngine {
     ];
 
     if (this.mode === "step") {
-      const remainingC = this.countChar("C");
-      return deltas4
-        .map(([dr, dc]) => ({ r: orb.r + dr, c: orb.c + dc }))
+      const dirs = this.forcedDir ? [[this.forcedDir.dr, this.forcedDir.dc]] : deltas4;
+
+      return dirs
+        .map(([dr, dc]) => ({ r: orb.r + dr, c: orb.c + dc, dr, dc }))
         .filter(p => this.inBounds(p.r, p.c))
+        .filter(p => walkable(this.board[p.r][p.c]))
         .filter(p => {
-          const ch = this.board[p.r][p.c];
-          return ch === "." || ch === "C" || (ch === "G" && remainingC === 0);
-        });
+          // cannot stop on B twice in a row
+          const dest = this.board[p.r][p.c];
+          if (this.orbOnBumper && dest === "B") return false;
+          return true;
+        })
+        .map(p => ({ r: p.r, c: p.c }));
     }
 
-    // glide (8-direction): slide over "."; stop on last "." before blocker/edge; can land on "G"
     const moves = [];
     const seen = new Set();
 
-    for (const [dr, dc] of deltas8) {
+    const dirs = this.forcedDir ? [[this.forcedDir.dr, this.forcedDir.dc]] : deltas8;
+
+    for (const [dr, dc] of dirs) {
       let r = orb.r + dr;
       let c = orb.c + dc;
 
-      // immediate out of bounds => no move
       if (!this.inBounds(r, c)) continue;
 
-      // if first cell is blocker => cannot move that way
+      // first cell cannot be an X blocker
       if (this.isBlocker(this.board[r][c])) continue;
 
-      // march over empty cells
-      while (this.inBounds(r, c) && this.isTraversable(this.board[r][c])) {
+      // march over passable cells (.,C,B,H)
+      while (this.inBounds(r, c) && passable(this.board[r][c])) {
         r += dr;
         c += dc;
       }
 
-      const remainingC = this.countChar("C");
-
-      // case 1: we stopped because we hit "G"
+      // if we stopped on G, allow landing on G
       if (this.inBounds(r, c) && this.board[r][c] === "G") {
-        // Only allow landing on G if captures are done.
-        if (remainingC === 0) {
-          const key = `${r},${c}`;
-          if (!seen.has(key)) {
-            seen.add(key);
-            moves.push({ r, c });
-          }
-        } else {
-          // If G is still locked, treat it like a wall: stop before it.
-          const stopR = r - dr;
-          const stopC = c - dc;
-          if (this.inBounds(stopR, stopC) && !(stopR === orb.r && stopC === orb.c)) {
-            const stopCh = this.board[stopR][stopC];
-            if (this.isTraversable(stopCh)) {
-              const key = `${stopR},${stopC}`;
-              if (!seen.has(key)) {
-                seen.add(key);
-                moves.push({ r: stopR, c: stopC });
-              }
-            }
-          }
+        const key = `${r},${c}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          moves.push({ r, c });
         }
         continue;
       }
 
-      // case 2: we stopped because we hit blocker or edge or "O" (shouldn't) => step back to last empty
+      // step back to last passable cell
       const stopR = r - dr;
       const stopC = c - dc;
 
-      if (this.inBounds(stopR, stopC)) {
-        // must actually move somewhere
-        if (stopR === orb.r && stopC === orb.c) continue;
+      if (!this.inBounds(stopR, stopC)) continue;
+      if (stopR === orb.r && stopC === orb.c) continue;
 
-        const stopCh = this.board[stopR][stopC];
-        if (this.isTraversable(stopCh)) {
-          const key = `${stopR},${stopC}`;
-          if (!seen.has(key)) {
-            seen.add(key);
-            moves.push({ r: stopR, c: stopC });
-          }
-        }
+      const dest = this.board[stopR][stopC];
+      if (!passable(dest)) continue;
+
+      // cannot stop on B twice in a row
+      if (this.orbOnBumper && dest === "B") continue;
+
+      const key = `${stopR},${stopC}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        moves.push({ r: stopR, c: stopC });
       }
     }
 
@@ -318,13 +317,45 @@ export class OrbEngine {
     const ok = legal.some(m => m.r === r && m.c === c);
     if (!ok) return { ok: false, reason: "illegal_move" };
 
-    const target = this.board[r][c];
+    const dr = Math.sign(r - orb.r);
+    const dc = Math.sign(c - orb.c);
 
     // capture any C tiles you cross (including destination if it’s C)
     this.captureAlongPath(orb, { r, c });
 
+    const target = this.board[r][c];
+
+    // clear old orb
     this.board[orb.r][orb.c] = ".";
+
+    // default: clear forced state unless we land on bumper
+    this.forcedDir = null;
+    this.orbOnBumper = false;
+
+    // HOLE: landing on H sends orb back to lastSafe (hole remains H)
+    if (target === "H") {
+      // orb does NOT occupy the hole tile
+      if (this.lastSafe) {
+        this.board[this.lastSafe.r][this.lastSafe.c] = "O";
+      } else {
+        // fallback: if somehow no lastSafe, reset level
+        this.reset();
+      }
+      this.win = false;
+      return { ok: true, win: this.win, fell: true };
+    }
+
+    // normal landing (.,C,B,G)
     this.board[r][c] = "O";
+
+    // BUMPER: force reverse direction next move
+    if (target === "B") {
+      this.forcedDir = { dr: -dr, dc: -dc };
+      this.orbOnBumper = true;
+    }
+
+    // update lastSafe (anything except hole)
+    this.lastSafe = { r, c };
 
     const remainingC = this.countChar("C");
     if (target === "G" && remainingC === 0) this.win = true;
