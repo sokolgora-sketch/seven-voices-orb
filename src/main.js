@@ -278,6 +278,7 @@ function render() {
             engine.setCell(r, c, paint);
             if (typeof engine.normalizePieces === "function") engine.normalizePieces();
             render();
+            saveSnapshot("Autosaved (paint)");
           }
           return;
         }
@@ -301,6 +302,7 @@ function render() {
             else lastEvent = "Moved";
           }
 
+          saveSnapshot("Autosaved (move)");
           render();
         }
       });
@@ -334,6 +336,7 @@ if (modeSel) {
   modeSel.addEventListener("change", () => {
     setModeFromSelect();
     render();
+    saveSnapshot("Autosaved (mode change)");
   });
 }
 
@@ -343,6 +346,7 @@ if (levelSel) {
     const idx = Number(levelSel.value || "0");
     applyLevel(Number.isFinite(idx) ? idx : 0);
     render();
+    saveSnapshot("Autosaved (level change)");
   });
 }
 
