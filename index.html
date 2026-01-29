@@ -201,6 +201,9 @@ user-select: none;
   .helpList{margin:0;padding-left:18px;line-height:1.45;opacity:.9}
   .helpList li{margin:6px 0}
 
+
+  .controls{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;align-items:center}
+  .controls button{white-space:nowrap}
 </style>
 </head>
 
@@ -258,8 +261,7 @@ user-select: none;
     <button id="exportBtn" type="button">Export</button>
     <button id="importBtn" type="button">Import</button>
     <button id="saveBtn" type="button">Save</button>
-    <button id="loadBtn" type="button">Load</button>
-  </div>
+    <button id="loadBtn" type="button">Load</button></div>
 </div>
 
 <textarea id="levelText" rows="8" style="display:none; width:min(760px,92vw); margin-top:10px;"
