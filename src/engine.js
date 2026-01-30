@@ -403,4 +403,4 @@ export class OrbEngine {
   }
 }
 
-export const engine = new OrbEngine("step"); = new OrbEngine("step");
+export const engine = new OrbEngine("step");
