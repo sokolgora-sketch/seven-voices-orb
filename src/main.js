@@ -171,6 +171,48 @@ function getLevelObjSafe() {
   return (levels && levels[idx]) ? levels[idx] : null;
 }
 
+
+// --- v1.4-B: meta ⇄ level wiring ---
+function getLevelObjSafe() {
+  try {
+    const lvls = getLevelsSafe();
+    const idx = getLevelIndexSafe();
+    if (!Array.isArray(lvls)) return null;
+    return (lvls[idx] || lvls[0]) || null;
+  } catch {
+    return null;
+  }
+}
+
+function syncMetaUIFromLevel() {
+  if (!DEV_MODE) return;
+  const lvl = getLevelObjSafe();
+  if (!lvl) return;
+
+  if (metaPanel && metaPanel.style && metaPanel.style.display === "none") return;
+
+  if (metaName) metaName.value = String(lvl.name || "");
+  if (metaAuthor) metaAuthor.value = String(lvl.author || "");
+  if (metaDifficulty) metaDifficulty.value = String(lvl.difficulty || "Easy");
+  if (metaHint) metaHint.value = String(lvl.hint || "");
+}
+
+function applyMetaUIToLevel() {
+  if (!DEV_MODE) return false;
+  if (!editorOn()) return false;
+
+  const lvl = getLevelObjSafe();
+  if (!lvl) return false;
+
+  if (metaName) lvl.name = String(metaName.value || "").trim();
+  if (metaAuthor) lvl.author = String(metaAuthor.value || "").trim();
+  if (metaDifficulty) lvl.difficulty = String(metaDifficulty.value || "Easy").trim();
+  if (metaHint) lvl.hint = String(metaHint.value || "").trim();
+
+  return true;
+}
+// --- end v1.4-B ---
+
 function applyLevel(idx) {
   const levels = getLevelsSafe();
   const max = Math.max(0, (levels.length || 1) - 1);
@@ -463,6 +505,29 @@ if (hintBtn) {
     hintBox.style.display = isOpen ? "none" : "block";
   });
 }
+
+
+// --- v1.4-B: meta editor listeners ---
+function wireMetaEditor() {
+  if (!DEV_MODE) return;
+
+  syncMetaUIFromLevel();
+
+  const onMetaChange = () => {
+    const ok = applyMetaUIToLevel();
+    if (!ok) return;
+    render();
+    saveSnapshot("Autosaved (meta edit)");
+  };
+
+  if (metaName) metaName.addEventListener("input", onMetaChange);
+  if (metaAuthor) metaAuthor.addEventListener("input", onMetaChange);
+  if (metaDifficulty) metaDifficulty.addEventListener("change", onMetaChange);
+  if (metaHint) metaHint.addEventListener("input", onMetaChange);
+}
+
+wireMetaEditor();
+// --- end v1.4-B ---
 
 // Meta inputs → level model
 [metaName, metaAuthor, metaDifficulty, metaHint].forEach((el) => {
