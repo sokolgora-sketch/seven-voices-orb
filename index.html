@@ -278,7 +278,25 @@ user-select: none;
           <input id="metaName" class="metaInput" type="text" placeholder="Lx — Title" />
         </div>
 
+        <div class="metaRow">
+          <label class="metaLabel" for="metaAuthor">Author</label>
+          <input id="metaAuthor" class="metaInput" type="text" placeholder="Wei" />
+        </div>
 
+        <div class="metaRow">
+          <label class="metaLabel" for="metaDifficulty">Difficulty</label>
+          <select id="metaDifficulty" class="metaInput">
+            <option value="Easy">Easy</option>
+            <option value="Medium">Medium</option>
+            <option value="Hard">Hard</option>
+          </select>
+        </div>
+
+        <div class="metaRow">
+          <label class="metaLabel" for="metaHint">Hint</label>
+          <textarea id="metaHint" class="metaInput" rows="2" placeholder="One short helpful sentence."></textarea>
+        </div>
+      </div>
 
     <button id="exportBtn" type="button">Export</button>
     <button id="importBtn" type="button">Import</button>
