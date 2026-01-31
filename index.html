@@ -209,6 +209,11 @@ user-select: none;
   .controls{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;align-items:center}
   .controls button{white-space:nowrap}
   .controls .left{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;align-items:center}
+  .metaPanel{display:grid;gap:8px;margin-top:10px;max-width:min(760px,92vw)}
+  .metaRow{display:grid;grid-template-columns:110px 1fr;gap:10px;align-items:center}
+  .metaLabel{opacity:.85;font-size:12px}
+  .metaInput{width:100%;padding:8px 10px;border-radius:10px;border:1px solid rgba(255,255,255,0.10);background:rgba(255,255,255,0.03);color:inherit}
+  #metaHint{resize:vertical;min-height:42px}
 </style>
 </head>
 
@@ -273,6 +278,32 @@ user-select: none;
     <button id="loadBtn" type="button">Load</button>
   </div>
 </div>
+
+      <div id="metaPanel" class="metaPanel">
+        <div class="metaRow">
+          <label class="metaLabel" for="metaName">Name</label>
+          <input id="metaName" class="metaInput" type="text" placeholder="Lx — Title" />
+        </div>
+
+        <div class="metaRow">
+          <label class="metaLabel" for="metaAuthor">Author</label>
+          <input id="metaAuthor" class="metaInput" type="text" placeholder="Wei" />
+        </div>
+
+        <div class="metaRow">
+          <label class="metaLabel" for="metaDifficulty">Difficulty</label>
+          <select id="metaDifficulty" class="metaInput">
+            <option value="Easy">Easy</option>
+            <option value="Medium">Medium</option>
+            <option value="Hard">Hard</option>
+          </select>
+        </div>
+
+        <div class="metaRow">
+          <label class="metaLabel" for="metaHint">Hint</label>
+          <textarea id="metaHint" class="metaInput" rows="2" placeholder="One short helpful sentence."></textarea>
+        </div>
+      </div>
 
 <textarea id="levelText" rows="8" style="display:none; width:min(760px,92vw); margin-top:10px;"
   placeholder="Exported level will appear here (7 lines). For Import: paste 7 lines and press Import."></textarea>
