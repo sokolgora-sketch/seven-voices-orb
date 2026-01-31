@@ -26,6 +26,11 @@ const hintText = $("hintText");
 const saveBtn = $("saveBtn");
 const loadBtn = $("loadBtn");
 const levelText = $("levelText");
+const metaPanel = $("metaPanel");
+const metaName = $("metaName");
+const metaAuthor = $("metaAuthor");
+const metaDifficulty = $("metaDifficulty");
+const metaHint = $("metaHint");
 
 /**
  * DEV_MODE
@@ -36,7 +41,7 @@ const DEV_MODE = new URLSearchParams(window.location.search).has("dev");
 
 function setDevToolsVisible(show) {
   // hide/show the *label wrappers* when possible, otherwise the element
-  const ids = ["editorToggle", "paintSel", "exportBtn", "importBtn", "levelText"];
+  const ids = ["editorToggle", "paintSel", "metaPanel", "exportBtn", "importBtn", "levelText"];
   for (const id of ids) {
     const el = document.getElementById(id);
     if (!el) continue;
@@ -160,6 +165,54 @@ function getLevelIndexSafe() {
   return (engine && Number.isFinite(engine.levelIndex)) ? engine.levelIndex : 0;
 }
 
+function getLevelObjSafe() {
+  const levels = getLevelsSafe();
+  const idx = getLevelIndexSafe();
+  return (levels && levels[idx]) ? levels[idx] : null;
+}
+
+
+// --- v1.4-B: meta ⇄ level wiring ---
+function getLevelObjSafe() {
+  try {
+    const lvls = getLevelsSafe();
+    const idx = getLevelIndexSafe();
+    if (!Array.isArray(lvls)) return null;
+    return (lvls[idx] || lvls[0]) || null;
+  } catch {
+    return null;
+  }
+}
+
+function syncMetaUIFromLevel() {
+  if (!DEV_MODE) return;
+  const lvl = getLevelObjSafe();
+  if (!lvl) return;
+
+  if (metaPanel && metaPanel.style && metaPanel.style.display === "none") return;
+
+  if (metaName) metaName.value = String(lvl.name || "");
+  if (metaAuthor) metaAuthor.value = String(lvl.author || "");
+  if (metaDifficulty) metaDifficulty.value = String(lvl.difficulty || "Easy");
+  if (metaHint) metaHint.value = String(lvl.hint || "");
+}
+
+function applyMetaUIToLevel() {
+  if (!DEV_MODE) return false;
+  if (!editorOn()) return false;
+
+  const lvl = getLevelObjSafe();
+  if (!lvl) return false;
+
+  if (metaName) lvl.name = String(metaName.value || "").trim();
+  if (metaAuthor) lvl.author = String(metaAuthor.value || "").trim();
+  if (metaDifficulty) lvl.difficulty = String(metaDifficulty.value || "Easy").trim();
+  if (metaHint) lvl.hint = String(metaHint.value || "").trim();
+
+  return true;
+}
+// --- end v1.4-B ---
+
 function applyLevel(idx) {
   const levels = getLevelsSafe();
   const max = Math.max(0, (levels.length || 1) - 1);
@@ -173,10 +226,22 @@ function applyLevel(idx) {
     engine.setLevel(i);
     moveCount = 0;
     if (levelSel) levelSel.value = String(i);
+    syncLevelOptions();
+    syncMetaInputsFromLevel();
     return true;
   }
 
   return false;
+}
+
+function syncMetaInputsFromLevel() {
+  const lvl = getLevelObjSafe();
+  if (!lvl) return;
+
+  if (metaName) metaName.value = lvl.name || "";
+  if (metaAuthor) metaAuthor.value = lvl.author || "";
+  if (metaDifficulty) metaDifficulty.value = (OK_DIFF.has(lvl.difficulty) ? lvl.difficulty : "Easy");
+  if (metaHint) metaHint.value = lvl.hint || "";
 }
 
 function syncLevelOptions() {
@@ -215,6 +280,27 @@ function hideWinUI() {
 
 function editorOn() {
   return !!(DEV_MODE && editorToggle && editorToggle.value === "on");
+}
+
+const OK_DIFF = new Set(["Easy", "Medium", "Hard"]);
+
+function commitMetaFromInputs() {
+  if (!editorOn()) return;
+  const lvl = getLevelObjSafe();
+  if (!lvl) return;
+
+  if (metaName) lvl.name = String(metaName.value || "").trim();
+  if (metaAuthor) lvl.author = String(metaAuthor.value || "").trim();
+
+  if (metaDifficulty) {
+    const d = String(metaDifficulty.value || "Easy");
+    lvl.difficulty = OK_DIFF.has(d) ? d : "Easy";
+  }
+
+  if (metaHint) lvl.hint = String(metaHint.value || "").trim();
+
+  render();
+  saveSnapshot("Autosaved (meta)");
 }
 
 function ensureTextAreaVisible() {
@@ -419,6 +505,36 @@ if (hintBtn) {
     hintBox.style.display = isOpen ? "none" : "block";
   });
 }
+
+
+// --- v1.4-B: meta editor listeners ---
+function wireMetaEditor() {
+  if (!DEV_MODE) return;
+
+  syncMetaUIFromLevel();
+
+  const onMetaChange = () => {
+    const ok = applyMetaUIToLevel();
+    if (!ok) return;
+    render();
+    saveSnapshot("Autosaved (meta edit)");
+  };
+
+  if (metaName) metaName.addEventListener("input", onMetaChange);
+  if (metaAuthor) metaAuthor.addEventListener("input", onMetaChange);
+  if (metaDifficulty) metaDifficulty.addEventListener("change", onMetaChange);
+  if (metaHint) metaHint.addEventListener("input", onMetaChange);
+}
+
+wireMetaEditor();
+// --- end v1.4-B ---
+
+// Meta inputs → level model
+[metaName, metaAuthor, metaDifficulty, metaHint].forEach((el) => {
+  if (!el) return;
+  el.addEventListener("input", commitMetaFromInputs);
+  el.addEventListener("change", commitMetaFromInputs);
+});
 
 if (exportBtn) {
   exportBtn.addEventListener("click", () => {
