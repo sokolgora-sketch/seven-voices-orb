@@ -20,6 +20,9 @@ const editorToggle = $("editorToggle");
 const paintSel = $("paintSel");
 const exportBtn = $("exportBtn");
 const importBtn = $("importBtn");
+const hintBtn = $("hintBtn");
+const hintBox = $("hintBox");
+const hintText = $("hintText");
 const saveBtn = $("saveBtn");
 const loadBtn = $("loadBtn");
 const levelText = $("levelText");
@@ -47,6 +50,8 @@ function setDevToolsVisible(show) {
 const hudMode = $("hudMode");
 const hudLevel = $("hudLevel");
 const hudMoves = $("hudMoves");
+const hudAuthor = $("hudAuthor");
+const hudDiff = $("hudDiff");
 
 // Win UI (new HTML)
 const winOverlay = $("winOverlay");
@@ -235,6 +240,10 @@ function render() {
 
   hideWinUI();
 
+  // level meta / hint
+  if (hintText) hintText.textContent = (s.levelHint || "—");
+  if (hintBtn) hintBtn.disabled = !(s.levelHint && String(s.levelHint).trim().length);
+
   // keep modeSel synced (if engine changes it)
   if (modeSel && s.mode && modeSel.value !== s.mode) modeSel.value = s.mode;
 
@@ -325,6 +334,8 @@ function render() {
     const idx = getLevelIndexSafe();
     hudLevel.textContent = levels[idx]?.name || `L${idx + 1}`;
   }
+  if (hudAuthor) hudAuthor.textContent = s.levelAuthor || "-";
+  if (hudDiff) hudDiff.textContent = s.levelDifficulty || "-";
   if (hudMoves) hudMoves.textContent = String(moveCount);
 
   if (s.win) showWinUI();
@@ -396,6 +407,14 @@ if (loadBtn) {
     const res = loadSnapshot();
     if (!res.ok && typeof lastEvent === "string") lastEvent = "Load failed: " + res.reason;
     render();
+  });
+}
+
+if (hintBtn) {
+  hintBtn.addEventListener("click", () => {
+    if (!hintBox) return;
+    const isOpen = hintBox.style.display !== "none";
+    hintBox.style.display = isOpen ? "none" : "block";
   });
 }
 

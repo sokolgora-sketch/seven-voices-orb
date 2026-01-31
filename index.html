@@ -197,7 +197,11 @@ user-select: none;
 
 
   .help{max-width:720px;margin:24px auto 0;padding:14px 16px;border:1px solid rgba(255,255,255,0.10);border-radius:14px;background:rgba(255,255,255,0.03)}
-  .helpTitle{font-weight:700;letter-spacing:.2px;margin-bottom:8px;opacity:.95}
+  
+  .hintBox{max-width:720px;margin:12px auto 0;padding:12px 14px;border:1px solid rgba(255,255,255,0.10);border-radius:14px;background:rgba(255,255,255,0.03)}
+  .hintTitle{font-weight:700;letter-spacing:.2px;margin-bottom:6px;opacity:.95}
+  .hintText{opacity:.9;line-height:1.45}
+.helpTitle{font-weight:700;letter-spacing:.2px;margin-bottom:8px;opacity:.95}
   .helpList{margin:0;padding-left:18px;line-height:1.45;opacity:.9}
   .helpList li{margin:6px 0}
 
@@ -217,6 +221,8 @@ user-select: none;
   <div class="left">
     <div class="pill">Mode: <strong><span id="hudMode">-</span></strong></div>
     <div class="pill">Level: <strong><span id="hudLevel">-</span></strong></div>
+    <div class="pill">Author: <strong><span id="hudAuthor">-</span></strong></div>
+    <div class="pill">Diff: <strong><span id="hudDiff">-</span></strong></div>
     <div class="pill">Moves: <strong><span id="hudMoves">0</span></strong></div>
     <div class="pill">Captures: <strong><span id="hudCaptures">0</span></strong></div>
   </div>
@@ -239,6 +245,8 @@ user-select: none;
     </label>
 
     <button id="nextBtn" type="button">Next Level</button>
+
+      <button id="hintBtn" class="secondary" type="button">Hint</button>
 
     <label class="pill">Editor
       <select id="editorToggle">
@@ -279,6 +287,11 @@ user-select: none;
 
   <span><strong>B</strong> = Bumper (forces reverse)</span>
   <span><strong>H</strong> = Hole (returns to last safe)</span>
+</div>
+
+<div class="hintBox" id="hintBox" style="display:none">
+  <div class="hintTitle">Hint</div>
+  <div class="hintText" id="hintText">—</div>
 </div>
 
 <div class="help" id="help">

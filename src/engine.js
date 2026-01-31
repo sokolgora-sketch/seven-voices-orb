@@ -23,6 +23,9 @@ export class OrbEngine {
     this.levels = [
       {
         name: "L1 — Warmup",
+        author: "Wei",
+        difficulty: "Easy",
+        hint: "Open lanes let you practice simple steps before gliding.",
         board: [
           ".......",
           "..X....",
@@ -35,6 +38,9 @@ export class OrbEngine {
       },
       {
         name: "L2 — Corridor",
+        author: "Wei",
+        difficulty: "Medium",
+        hint: "Use the straight channels to approach the goal without getting trapped.",
         board: [
           "..X.X..",
           "..X.X..",
@@ -47,6 +53,9 @@ export class OrbEngine {
       },
       {
         name: "L3 — Zigzag",
+        author: "Wei",
+        difficulty: "Hard",
+        hint: "Zigzagging blockers force you to plan glides that end on safe tiles.",
         board: [
           "X.....X",
           ".X...X.",
@@ -367,6 +376,7 @@ export class OrbEngine {
   getState() {
     const orb = this.findOrb();
     const goal = this.findGoal(); // may be null after win because O overwrote it
+    const lvl = (this.levels[this.levelIndex] || this.levels[0]) || {};
     return {
       size: this.SIZE,
       forcedDir: this.forcedDir,
@@ -374,13 +384,16 @@ export class OrbEngine {
       lastSafe: this.lastSafe,
 
       remainingC: this.countChar("C"),
-      board: this.board.map(r => r.join("")),
+      board: this.board.map((r) => r.join("")),
       orb,
       goal,
       win: this.win,
       mode: this.mode,
       levelIndex: this.levelIndex,
-      levelName: (this.levels[this.levelIndex] || this.levels[0]).name,
+      levelName: lvl.name || "",
+      levelAuthor: lvl.author || "",
+      levelDifficulty: lvl.difficulty || "",
+      levelHint: lvl.hint || "",
       levelCount: this.levels.length,
       legalMoves: this.legalMoves(),
     };
