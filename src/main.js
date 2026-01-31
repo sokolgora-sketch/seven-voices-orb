@@ -356,6 +356,7 @@ if (levelSel) {
   levelSel.addEventListener("change", () => {
     const idx = Number(levelSel.value || "0");
     applyLevel(Number.isFinite(idx) ? idx : 0);
+    if (hintBox) hintBox.style.display = "none";
     render();
     saveSnapshot("Autosaved (level change)");
   });
@@ -413,7 +414,8 @@ if (loadBtn) {
 if (hintBtn) {
   hintBtn.addEventListener("click", () => {
     if (!hintBox) return;
-    const isOpen = hintBox.style.display !== "none";
+    if (hintBtn.disabled) return;
+    const isOpen = hintBox.style.display === "block";
     hintBox.style.display = isOpen ? "none" : "block";
   });
 }
