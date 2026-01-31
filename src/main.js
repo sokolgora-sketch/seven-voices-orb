@@ -50,6 +50,8 @@ function setDevToolsVisible(show) {
 const hudMode = $("hudMode");
 const hudLevel = $("hudLevel");
 const hudMoves = $("hudMoves");
+const hudAuthor = $("hudAuthor");
+const hudDiff = $("hudDiff");
 
 // Win UI (new HTML)
 const winOverlay = $("winOverlay");
@@ -332,6 +334,8 @@ function render() {
     const idx = getLevelIndexSafe();
     hudLevel.textContent = levels[idx]?.name || `L${idx + 1}`;
   }
+  if (hudAuthor) hudAuthor.textContent = s.levelAuthor || "-";
+  if (hudDiff) hudDiff.textContent = s.levelDifficulty || "-";
   if (hudMoves) hudMoves.textContent = String(moveCount);
 
   if (s.win) showWinUI();
